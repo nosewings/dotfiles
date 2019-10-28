@@ -27,6 +27,6 @@ unset __CONDA_DIR
 unset __CONDA
 unset __conda_setup
 
-if [[ -f $ZSH/oh-my-zsh.sh ]]
+if [[ -f $ZSH/oh-my-zsh.sh ]]; then
    source $ZSH/oh-my-zsh.sh
 fi
