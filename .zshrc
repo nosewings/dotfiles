@@ -14,7 +14,7 @@ export JULIA_NUM_THREADS="${$(/usr/bin/grep -m1 'cpu cores' /proc/cpuinfo)##*: }
 __CONDA_DIR="$HOME/opt/miniconda3"
 __CONDA="$__CONDA_DIR/bin/conda"
 __conda_setup="$($__CONDA 'shell.bash' 'hook' 2> /dev/null)"
-if [ $? -eq 0 ]; then
+if [[ $? -eq 0 ]]; then
     eval "$__conda_setup"
 else
     if [ -f "$__CONDA_DIR/etc/profile.d/conda.sh" ]; then
@@ -27,4 +27,6 @@ unset __CONDA_DIR
 unset __CONDA
 unset __conda_setup
 
-source $ZSH/oh-my-zsh.sh
+if [[ -f $ZSH/oh-my-zsh.sh ]]
+   source $ZSH/oh-my-zsh.sh
+fi
