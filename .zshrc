@@ -9,7 +9,18 @@ fi
 
 alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
 
-export JULIA_NUM_THREADS="${$(/usr/bin/grep -m1 'cpu cores' /proc/cpuinfo)##*: }"
+__NUM_THREADS="${$(/usr/bin/grep -m1 'cpu cores' /proc/cpuinfo)##*: }"
+export GOTO_NUM_THREADS=$__NUM_THREADS
+export JULIA_NUM_THREADS=$__NUM_THREADS
+export MKL_NUM_THREADS=$__NUM_THREADS
+export NUMEXPR_MAX_THREADS=$__NUM_THREADS
+export NUMBA_NUM_THREADS=$__NUM_THREADS
+export OMP_NUM_THREADS=$__NUM_THREADS
+export OPENBLAS_NUM_THREADS=$__NUM_THREADS
+export VECLIB_MAXIMUM_THREADS=$__NUM_THREADS
+unset __NUM_THREADS
+
+export MAKEFLAGS="$MAKEFLAGS -j$(nproc)"
 
 __CONDA_DIR="$HOME/opt/miniconda3"
 __CONDA="$__CONDA_DIR/bin/conda"
