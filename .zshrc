@@ -1,4 +1,8 @@
-ZSH=/usr/share/oh-my-zsh/
+if [[ -d /usr/share/oh-my-zsh/ ]]; then
+    ZSH="/usr/share/oh-my-zsh/"
+else
+    ZSH="$HOME/.oh-my-zsh/"
+fi
 ZSH_THEME="ys"
 
 plugins=(git)
