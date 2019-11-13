@@ -1,14 +1,16 @@
+using Pkg
+
 atreplinit() do repl
     try
         @eval using Revise
         @async Revise.wait_steal_repl_backend()
     catch
-        println("Unable to load Revise.")
+        warn("Revise not installed")
     end
 end
 
 try
-    using OhMyREPL
+    @eval using OhMyREPL
 catch
-    println("Unable to load OhMyREPL.")
+    warn("OhMyREPL not installed")
 end

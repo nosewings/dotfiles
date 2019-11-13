@@ -51,6 +51,8 @@ There are two things you can do about this warning:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 
+(use-package cargo)
+
 (use-package elpy
   :defer t
   :init
@@ -61,6 +63,15 @@ There are two things you can do about this warning:
   (ivy-mode t))
 
 (use-package pkgbuild-mode)
+
+(use-package racer
+  :requires rust-mode
+  :config
+  (add-hook 'rust-mode-hook #'racer-mode)
+  (add-hook 'racer-mode-hook #'eldoc-mode)
+  (add-hook 'racer-mode-hook #'company-mode))
+
+(use-package rust-mode)
 
 (use-package tex
   :ensure auctex
