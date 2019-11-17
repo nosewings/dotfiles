@@ -4,7 +4,8 @@ makeflags=()
 typeset -U makeflags
 typeset -T MAKEFLAGS makeflags " "
 
-# Read "function" as "let" (for "local" variables).
+# When used like this, the `function` keyword defines an immediately executes an
+# anonymous function. This basically amounts to a mechanism for lexical scoping.
 function {
     if [[ -d /usr/share/oh-my-zsh/ ]]; then
 	ZSH="/usr/share/oh-my-zsh/"
@@ -39,7 +40,9 @@ function {
     # here, but I'm not sure.
     makeflags+=("-j$(nproc --all)")
 
-    local CONDA_DIR="$HOME/opt/miniconda3"
+    path+=("$HOME/.ghcup/bin")
+
+    local CONDA_DIR="$HOME/.local/opt/conda"
     local CONDA="$CONDA_DIR/bin/conda"
     local conda_setup="$($CONDA 'shell.bash' 'hook' 2> /dev/null)"
     if [[ $? -eq 0 ]]; then

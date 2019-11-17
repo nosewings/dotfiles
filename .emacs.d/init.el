@@ -58,6 +58,8 @@ There are two things you can do about this warning:
   :init
   (advice-add 'python-mode :before 'elpy-enable))
 
+(use-package haskell-mode)
+
 (use-package ivy
   :init
   (ivy-mode t))
@@ -81,9 +83,7 @@ There are two things you can do about this warning:
 	      (visual-line-mode t)))
   :config
   (setq TeX-parse-self t
-	Tex-auto-save t)
-  (add-to-list 'TeX-view-program-selection
-	       '(output-pdf "Okular")))
+	Tex-auto-save t))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
