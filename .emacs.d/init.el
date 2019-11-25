@@ -53,22 +53,46 @@ There are two things you can do about this warning:
 
 (use-package cargo)
 
+(use-package dante
+  :ensure t
+  :after haskell-mode
+  :commands 'dante-mode
+  :init
+  (add-hook 'haskell-mode-hook 'dante-mode))
+
 (use-package elpy
-  :defer t
   :init
   (advice-add 'python-mode :before 'elpy-enable))
 
-(use-package haskell-mode)
+(use-package exec-path-from-shell
+  :init
+  (exec-path-from-shell-initialize))
+
+(use-package flycheck
+  :init
+  (global-flycheck-mode))
+
+(use-package haskell-mode
+  :init
+  (add-hook 'haskell-mode 'haskell-indent-mode))
 
 (use-package ivy
   :init
   (ivy-mode t))
 
+(use-package org
+  :commands org-mode
+  :init
+  (add-hook
+   'org-mode-hook
+   (lambda ()
+     (visual-line-mode t))))
+
 (use-package pkgbuild-mode)
 
 (use-package racer
-  :requires rust-mode
-  :config
+  :after rust-mode
+  :init
   (add-hook 'rust-mode-hook #'racer-mode)
   (add-hook 'racer-mode-hook #'eldoc-mode)
   (add-hook 'racer-mode-hook #'company-mode))
@@ -78,12 +102,13 @@ There are two things you can do about this warning:
 (use-package tex
   :ensure auctex
   :init
-  (add-hook 'TeX-mode-hook
-	    (lambda ()
-	      (visual-line-mode t)))
+  (add-hook
+   'TeX-mode-hook
+   (lambda ()
+     (visual-line-mode t)))
   :config
   (setq TeX-parse-self t
-	Tex-auto-save t))
+	TeX-auto-save t))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
