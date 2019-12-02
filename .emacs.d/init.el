@@ -1,16 +1,17 @@
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; custom
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; init.el -- GNU Emacs initialization file.
 
+;;; Commentary:
+
+;; This is my init file.
+
+;;; Code:
+
+;;;; custom
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; package
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; package
 
 (require 'package)
 (let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
@@ -31,11 +32,7 @@ There are two things you can do about this warning:
     (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
 (package-initialize)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; use-package
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; use-package
 
 (unless (package-installed-p 'use-package)
   (package-refresh-contents)
@@ -45,20 +42,22 @@ There are two things you can do about this warning:
 (setq use-package-always-defer t)
 (setq use-package-always-ensure t)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Packages
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; Packages
 
 (use-package cargo)
 
+(use-package counsel
+  :init
+  (counsel-mode))
+
 (use-package dante
   :ensure t
-  :after haskell-mode
   :commands 'dante-mode
   :init
-  (add-hook 'haskell-mode-hook 'dante-mode))
+  (add-hook 'haskell-mode-hook 'dante-mode)
+  (add-hook 'dante-mode-hook
+   '(lambda () (flycheck-add-next-checker 'haskell-dante
+                '(warning . haskell-hlint)))))
 
 (use-package elpy
   :init
@@ -80,6 +79,10 @@ There are two things you can do about this warning:
   :init
   (ivy-mode t))
 
+(use-package magit)
+
+(use-package monokai-theme)
+
 (use-package org
   :commands org-mode
   :init
@@ -91,13 +94,16 @@ There are two things you can do about this warning:
 (use-package pkgbuild-mode)
 
 (use-package racer
-  :after rust-mode
   :init
   (add-hook 'rust-mode-hook #'racer-mode)
   (add-hook 'racer-mode-hook #'eldoc-mode)
   (add-hook 'racer-mode-hook #'company-mode))
 
 (use-package rust-mode)
+
+(use-package swiper
+  :init
+  (global-set-key "\C-s" 'swiper))
 
 (use-package tex
   :ensure auctex
@@ -110,36 +116,24 @@ There are two things you can do about this warning:
   (setq TeX-parse-self t
 	TeX-auto-save t))
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Backups
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; Backups
 
 (setq make-backup-files nil)
 (setq auto-save-default nil)
 (setq create-lockfiles nil)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Buffers
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; Buffers
 
 (setq-default message-log-max nil)
 (kill-buffer "*Messages*")
 (setq initial-scratch-message nil)
 
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; UI
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;;; UI
 
 (setq inhibit-splash-screen t)
 
-(menu-bar-mode -1)
-(tool-bar-mode -1)
+(menu-bar-mode 0)
+(tool-bar-mode 0)
 
 (setq column-number-mode t)
 (global-display-line-numbers-mode)
@@ -147,10 +141,23 @@ There are two things you can do about this warning:
 (setq show-paren-delay 0)
 (show-paren-mode 1)
 
+(global-hl-line-mode t)
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Server
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(load-theme 'monokai)
 
+;;;; Functions
+
+(defun kill-other-buffers ()
+  "Kill all buffers except the current one."
+  (interactive)
+  (let ((current (current-buffer)))
+    (mapcar (lambda (buffer)
+	      (if (not (eq buffer current))
+		  (kill-buffer buffer)))
+	    (buffer-list))))
+
+;;;; Server
 
 (server-start)
+
+;;; init.el ends here
