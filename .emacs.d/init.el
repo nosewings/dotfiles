@@ -51,7 +51,6 @@ There are two things you can do about this warning:
   (counsel-mode))
 
 (use-package dante
-  :ensure t
   :commands 'dante-mode
   :init
   (add-hook 'haskell-mode-hook 'dante-mode)
