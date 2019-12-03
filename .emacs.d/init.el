@@ -55,8 +55,9 @@ There are two things you can do about this warning:
   :init
   (add-hook 'haskell-mode-hook 'dante-mode)
   (add-hook 'dante-mode-hook
-   '(lambda () (flycheck-add-next-checker 'haskell-dante
-                '(warning . haskell-hlint)))))
+	    '(lambda ()
+	       (flycheck-add-next-checker
+		'haskell-dante '(warning . haskell-hlint)))))
 
 (use-package elpy
   :init
@@ -73,6 +74,9 @@ There are two things you can do about this warning:
 (use-package haskell-mode
   :init
   (add-hook 'haskell-mode 'haskell-indent-mode))
+
+(use-package hasklig-mode
+  :hook (haskell-mode))
 
 (use-package ivy
   :init
@@ -129,6 +133,16 @@ There are two things you can do about this warning:
 
 ;;;; UI
 
+(load-theme 'monokai)
+
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
+(set-face-attribute 'default nil
+                    :family "Hasklig"
+                    :height 100
+                    :weight 'normal
+                    :width 'normal)
+
 (setq inhibit-splash-screen t)
 
 (menu-bar-mode 0)
@@ -141,8 +155,6 @@ There are two things you can do about this warning:
 (show-paren-mode 1)
 
 (global-hl-line-mode t)
-
-(load-theme 'monokai)
 
 ;;;; Functions
 
