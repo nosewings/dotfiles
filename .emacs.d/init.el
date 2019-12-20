@@ -50,6 +50,8 @@ There are two things you can do about this warning:
   :init
   (counsel-mode))
 
+(use-package cuda-mode)
+
 (use-package dante
   :commands 'dante-mode
   :init
@@ -76,7 +78,13 @@ There are two things you can do about this warning:
   (add-hook 'haskell-mode 'haskell-indent-mode))
 
 (use-package hasklig-mode
-  :hook (haskell-mode))
+  :hook (haskell-mode)
+  :init
+  (add-hook 'hasklig-mode-hook
+	    (lambda ()
+	      (add-to-list
+	       'prettify-symbols-alist
+	       '("\\" . 955)))))
 
 (use-package ivy
   :init
@@ -85,6 +93,8 @@ There are two things you can do about this warning:
 (use-package magit)
 
 (use-package monokai-theme)
+
+(use-package opencl-mode)
 
 (use-package org
   :commands org-mode
@@ -155,6 +165,16 @@ There are two things you can do about this warning:
 (show-paren-mode 1)
 
 (global-hl-line-mode t)
+
+(xterm-mouse-mode t)
+
+;;;; Misc
+
+(setq c-default-style
+      '((java-mode . "java")
+	(awk-mode . "awk")
+	(other . "k&r"))
+      c-basic-offset 4)
 
 ;;;; Functions
 

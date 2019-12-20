@@ -7,6 +7,15 @@ typeset -U path
 function {
     path+=("$HOME/.local/bin")
 
+    # You know what, I don't buy the "well it's their CPU so they have every
+    # right to intentionally cripple their software on every other CPU" thing.
+    # There's no need to handle a company like Intel with kid gloves. Given
+    # their resources, they should be able to win without shit like this.
+    local VENDOR="${$(/usr/bin/grep -m1 'vendor_id' /proc/cpuinfo)##*: }"
+    if [[ $VENDOR == "AuthenticAMD" ]]; then
+	export MKL_DEBUG_CPU_TYPE=5
+    fi
+
     # This gets the number of physical cores. In my experience, SMT is
     # counterproductive for heavy-duty numerical computations.
     local NUM_CORES="${$(/usr/bin/grep -m1 'cpu cores' /proc/cpuinfo)##*: }"
@@ -25,6 +34,8 @@ function {
 
     path+=("$HOME/.ghcup/bin")
     path+=("$HOME/.cabal/bin")
+
+    path+=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
 
     local CONDA_DIR="$HOME/.local/opt/conda"
     local CONDA="$CONDA_DIR/bin/conda"
