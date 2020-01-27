@@ -23,6 +23,7 @@ function {
     export JULIA_NUM_THREADS=$NUM_CORES
     export MKL_NUM_THREADS=$NUM_CORES
     export NUMEXPR_MAX_THREADS=$NUM_CORES
+    export NUMEXPR_NUM_THREADS=$NUM_CORES
     export NUMBA_NUM_THREADS=$NUM_CORES
     export OMP_NUM_THREADS=$NUM_CORES
     export OPENBLAS_NUM_THREADS=$NUM_CORES
@@ -49,4 +50,6 @@ function {
             path+=("$CONDA_DIR/bin")
 	fi
     fi
+
+    path+=("$HOME/.local/opt/MATLAB/R2019b/bin")
 }
