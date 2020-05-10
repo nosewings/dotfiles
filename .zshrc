@@ -11,7 +11,7 @@ if [[ ! -d $ZSH_CACHE_DIR ]]; then
     mkdir $ZSH_CACHE_DIR
 fi
 
-alias dotfiles='/usr/bin/git --git-dir=$HOME/dotfiles/ --work-tree=$HOME'
+alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
 if [[ -f $ZSH/oh-my-zsh.sh ]]; then
     source $ZSH/oh-my-zsh.sh
