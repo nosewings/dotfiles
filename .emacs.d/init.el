@@ -129,6 +129,8 @@ There are two things you can do about this warning:
   (setq TeX-parse-self t
 	TeX-auto-save t))
 
+(use-package yaml-mode)
+
 ;;;; Backups
 
 (setq make-backup-files nil)
@@ -147,12 +149,6 @@ There are two things you can do about this warning:
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
-(set-face-attribute 'default nil
-                    :family "Hasklig"
-                    :height 100
-                    :weight 'normal
-                    :width 'normal)
-
 (setq inhibit-splash-screen t)
 
 (menu-bar-mode 0)
@@ -161,6 +157,7 @@ There are two things you can do about this warning:
 (setq column-number-mode t)
 (global-display-line-numbers-mode)
 
+(defvar show-paren-delay)
 (setq show-paren-delay 0)
 (show-paren-mode 1)
 
@@ -169,6 +166,10 @@ There are two things you can do about this warning:
 (xterm-mouse-mode t)
 
 ;;;; Misc
+
+(ignore-errors
+  (load-file (let ((coding-system-for-read 'utf-8))
+	       (shell-command-to-string "agda-mode locate"))))
 
 (setq c-default-style
       '((java-mode . "java")
@@ -182,10 +183,9 @@ There are two things you can do about this warning:
   "Kill all buffers except the current one."
   (interactive)
   (let ((current (current-buffer)))
-    (mapcar (lambda (buffer)
-	      (if (not (eq buffer current))
-		  (kill-buffer buffer)))
-	    (buffer-list))))
+    (dolist (buffer (buffer-list))
+	    (if (not (eq buffer current))
+		(kill-buffer buffer)))))
 
 ;;;; Server
 
