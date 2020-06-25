@@ -6,41 +6,46 @@
 
 ;;; Code:
 
+;;;; Functions and macros
+
+(defmacro eval-if-fboundp (func-call)
+  "Evaluate FUNC-CALL if the function is defined.
+Used to silence flycheck warnings."
+  (let ((sym (car func-call)))
+    `(if (fboundp ',sym) ,func-call
+       (error "Function `%s' not defined" (symbol-name ',sym)))))
+
+(defun kill-other-buffers ()
+  "Kill all buffers except the current one."
+  (interactive)
+  (let ((current (current-buffer)))
+    (dolist (buffer (buffer-list))
+	    (if (not (eq buffer current))
+		(kill-buffer buffer)))))
+
+;;;; straight.el
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+      (bootstrap-version 5))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage))
+(eval-if-fboundp
+ (straight-use-package 'use-package))
+(defvar straight-use-package-by-default)
+(setq straight-use-package-by-default t)
+
 ;;;; custom
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
-
-;;;; package
-
-(require 'package)
-(let* ((no-ssl (and (memq system-type '(windows-nt ms-dos))
-                    (not (gnutls-available-p))))
-       (proto (if no-ssl "http" "https")))
-  (when no-ssl
-    (warn "\
-Your version of Emacs does not support SSL connections,
-which is unsafe because it allows man-in-the-middle attacks.
-There are two things you can do about this warning:
-1. Install an Emacs version that does support SSL and be safe.
-2. Remove this warning from your init file so you won't see it again."))
-  ;; Comment/uncomment these two lines to enable/disable MELPA and MELPA Stable as desired
-  (add-to-list 'package-archives (cons "melpa" (concat proto "://melpa.org/packages/")) t)
-  ;;(add-to-list 'package-archives (cons "melpa-stable" (concat proto "://stable.melpa.org/packages/")) t)
-  (when (< emacs-major-version 24)
-    ;; For important compatibility libraries like cl-lib
-    (add-to-list 'package-archives (cons "gnu" (concat proto "://elpa.gnu.org/packages/")))))
-(package-initialize)
-
-;;;; use-package
-
-(unless (package-installed-p 'use-package)
-  (package-refresh-contents)
-  (package-install 'use-package))
-(eval-when-compile
-  (require 'use-package))
-(setq use-package-always-defer t)
-(setq use-package-always-ensure t)
 
 ;;;; Packages
 
@@ -53,13 +58,12 @@ There are two things you can do about this warning:
 (use-package cuda-mode)
 
 (use-package dante
+  :after haskell-mode
   :commands 'dante-mode
-  :init
-  (add-hook 'haskell-mode-hook 'dante-mode)
-  (add-hook 'dante-mode-hook
-	    '(lambda ()
-	       (flycheck-add-next-checker
-		'haskell-dante '(warning . haskell-hlint)))))
+  :hook (haskell-mode . dante-mode)
+  :config
+  (eval-if-fboundp
+   (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))))
 
 (use-package elpy
   :init
@@ -75,16 +79,15 @@ There are two things you can do about this warning:
 
 (use-package haskell-mode
   :init
-  (add-hook 'haskell-mode 'haskell-indent-mode))
+  (add-hook 'haskell-mode-hook (lambda ()
+				 (haskell-indent-mode)
+				 (setq buffer-face-mode-face '(:family "Hasklig"))
+				 (buffer-face-mode t))))
+
+
 
 (use-package hasklig-mode
-  :hook (haskell-mode)
-  :init
-  (add-hook 'hasklig-mode-hook
-	    (lambda ()
-	      (add-to-list
-	       'prettify-symbols-alist
-	       '("\\" . 955)))))
+  :hook haskell-mode)
 
 (use-package ivy
   :init
@@ -119,7 +122,7 @@ There are two things you can do about this warning:
   (global-set-key "\C-s" 'swiper))
 
 (use-package tex
-  :ensure auctex
+  :straight auctex
   :init
   (add-hook
    'TeX-mode-hook
@@ -165,6 +168,10 @@ There are two things you can do about this warning:
 
 (xterm-mouse-mode t)
 
+;; Too often have I accidentally pressed this key combination.
+;; The function is save-buffers-kill-emacs.
+(global-unset-key (kbd "C-x C-c"))
+
 ;;;; Misc
 
 (ignore-errors
@@ -176,16 +183,6 @@ There are two things you can do about this warning:
 	(awk-mode . "awk")
 	(other . "k&r"))
       c-basic-offset 4)
-
-;;;; Functions
-
-(defun kill-other-buffers ()
-  "Kill all buffers except the current one."
-  (interactive)
-  (let ((current (current-buffer)))
-    (dolist (buffer (buffer-list))
-	    (if (not (eq buffer current))
-		(kill-buffer buffer)))))
 
 ;;;; Server
 
