@@ -46,14 +46,14 @@ function {
     add_to_path_if_exists "$HOME/.ghcup/bin"
     add_to_path_if_exists "$HOME/.cabal/bin"
 
-    # Just add whatever versions of nsight-compute we have installed.
+    # Just add whatever version of nsight-compute we have installed.
     local nsight_dir=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
     if [[ ! -z "$nsight_dir" ]]; then
 	path+=("$nsight_dir")
     fi
 
     # Check various locations for an Anaconda installation.
-    local conda_dirs=("$HOME/.local/opt/conda" "/opt/anaconda")
+    local conda_dirs=("$HOME/.local/opt/conda" "$HOME/.local/opt/miniconda3" "/opt/anaconda")
     for conda_dir in $conda_dirs; do
 	if [[ -d "$conda_dir" ]]; then
 	    local CONDA_DIR="$conda_dir"
@@ -77,7 +77,11 @@ function {
 	fi
     fi
 
-    add_to_path_if_exists "$HOME/.local/opt/MATLAB/R2019b/bin"
+    # Just add whatever version of MATLAB we have installed.
+    local matlab_dir=$(echo $HOME/.local/opt/MATLAB/*) 2>/dev/null
+    if [[ ! -z "$matlab_dir" ]]; then
+	path+=("$matlab_dir/bin")
+    fi
 }
 
 # Can't make functions local.
