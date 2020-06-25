@@ -1,2 +1,8 @@
 import:
   timid: yes
+
+plugins: fetchart
+
+fetchart:
+  auto: yes
+  sources: filesystem
