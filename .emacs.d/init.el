@@ -1,4 +1,4 @@
-;;; init.el -- GNU Emacs initialization file.
+;;; init.el --- GNU Emacs initialization file.
 
 ;;; Commentary:
 
@@ -7,13 +7,6 @@
 ;;; Code:
 
 ;;;; Functions and macros
-
-(defmacro eval-if-fboundp (func-call)
-  "Evaluate FUNC-CALL if the function is defined.
-Used to silence flycheck warnings."
-  (let ((sym (car func-call)))
-    `(if (fboundp ',sym) ,func-call
-       (error "Function `%s' not defined" (symbol-name ',sym)))))
 
 (defun kill-other-buffers ()
   "Kill all buffers except the current one."
@@ -25,7 +18,6 @@ Used to silence flycheck warnings."
 
 ;;;; straight.el
 
-(defvar bootstrap-version)
 (let ((bootstrap-file
        (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
       (bootstrap-version 5))
@@ -37,10 +29,8 @@ Used to silence flycheck warnings."
       (goto-char (point-max))
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
-(eval-if-fboundp
- (straight-use-package 'use-package))
-(defvar straight-use-package-by-default)
-(setq straight-use-package-by-default t)
+(straight-use-package 'use-package)
+ (setq straight-use-package-by-default t)
 
 ;;;; custom
 
@@ -62,8 +52,15 @@ Used to silence flycheck warnings."
   :commands 'dante-mode
   :hook (haskell-mode . dante-mode)
   :config
-  (eval-if-fboundp
-   (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))))
+  (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))
+  ;; Just use v2-repl for everything.
+  (setq dante-methods-alist
+	`((v2-build
+	   ,(lambda (directory)
+	      (cl-some (apply-partially 'string-suffix-p ".cabal")
+		       (directory-files directory)))
+	   ("cabal" "v2-repl" (or dante-target (dante-package-name) nil))))
+	dante-methods '(v2-build)))
 
 (use-package elpy
   :init
@@ -79,12 +76,12 @@ Used to silence flycheck warnings."
 
 (use-package haskell-mode
   :init
-  (add-hook 'haskell-mode-hook (lambda ()
-				 (haskell-indent-mode)
-				 (setq buffer-face-mode-face '(:family "Hasklig"))
-				 (buffer-face-mode t))))
-
-
+  (add-hook
+   'haskell-mode-hook
+   (lambda ()
+     (haskell-indentation-mode)
+     (setq buffer-face-mode-face '(:family "Hasklig"))
+     (buffer-face-mode t))))
 
 (use-package hasklig-mode
   :hook haskell-mode)
@@ -92,6 +89,8 @@ Used to silence flycheck warnings."
 (use-package ivy
   :init
   (ivy-mode t))
+
+(use-package lua-mode)
 
 (use-package magit)
 
@@ -160,7 +159,6 @@ Used to silence flycheck warnings."
 (setq column-number-mode t)
 (global-display-line-numbers-mode)
 
-(defvar show-paren-delay)
 (setq show-paren-delay 0)
 (show-paren-mode 1)
 
@@ -189,3 +187,7 @@ Used to silence flycheck warnings."
 (server-start)
 
 ;;; init.el ends here
+
+;; Local Variables:
+;; byte-compile-warnings: (not free-vars unresolved)
+;; End:
