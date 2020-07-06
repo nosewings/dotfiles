@@ -21,14 +21,14 @@ function {
     # right to intentionally cripple their software on every other CPU" thing.
     # There's no need to handle a company like Intel with kid gloves. Given
     # their resources, they should be able to win without shit like this.
-    local VENDOR="${$(/usr/bin/grep -m1 'vendor_id' /proc/cpuinfo)##*: }"
+    local VENDOR="$(awk '$1 == "vendor_id" { print $3; exit }' /proc/cpuinfo)"
     if [[ $VENDOR == "AuthenticAMD" ]]; then
 	export MKL_DEBUG_CPU_TYPE=5
     fi
 
     # This gets the number of physical cores. In my experience, SMT is
     # counterproductive for heavy-duty numerical computations.
-    local NUM_CORES="${$(/usr/bin/grep -m1 'cpu cores' /proc/cpuinfo)##*: }"
+    local NUM_CORES="$(awk '$1 == "cpu" && $2 == "cores" { print $4; exit }' /proc/cpuinfo)"
     export GOTO_NUM_THREADS=$NUM_CORES
     export JULIA_NUM_THREADS=$NUM_CORES
     export MKL_NUM_THREADS=$NUM_CORES
@@ -41,7 +41,10 @@ function {
 
     # This gets the number of virtual cores. I think SMT will perform better
     # here, but I'm not sure.
-    makeflags+=("-j$(nproc --all)")
+    #
+    # We export this variable because it gets used by cabal.
+    export ncpus="$(nproc --all)"
+    makeflags+=("-j$ncpus")
 
     add_to_path_if_exists "$HOME/.ghcup/bin"
     add_to_path_if_exists "$HOME/.cabal/bin"
@@ -82,6 +85,9 @@ function {
     if [[ ! -z "$matlab_dir" ]]; then
 	path+=("$matlab_dir/bin")
     fi
+
+    export npm_config_prefix="$HOME/.node_modules"
+    path+=("$npm_config_prefix/bin")
 }
 
 # Can't make functions local.
