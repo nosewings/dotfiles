@@ -332,7 +332,10 @@
 	  '(";;;"
 	    ";;;;"
 	    "&&&"
-	    "fi"))
+	    "Fl"
+	    "Tl"
+	    "fi"
+	    "fj"))
 	 (all-ligatures (append ligas seqs my-ligatures))
 	 (ligature-alist (group-by (lambda (str)
 				     (aref str 0))
@@ -342,7 +345,7 @@
 			       ligature-alist)))
     (dolist (char-regexp regexp-alist)
       (set-char-table-range composition-function-table (car char-regexp)
-                            `([,(cdr char-regexp) 0 compose-gstring-for-graphic]))))
+                            `([,(cdr char-regexp) 0 compose-gstring-for-graphic])))))
 
 ;;;; Buffers
 
