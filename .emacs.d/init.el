@@ -226,7 +226,7 @@
 
 ;; TODO: FiraCode's ligature system is more powerful than this method can fully
 ;; accomodate.
-(when (and (>= emacs-greater-version 27)
+(when (and (>= emacs-major-version 27)
 	   (equal (face-attribute 'default :family) "Fira Code"))
   (let* ((ligas
 	  '("www"
