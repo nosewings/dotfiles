@@ -1,1 +1,1 @@
-:set prompt "\ESC[1m\ESC[32mλ \ESC[m"
+:set prompt "\ESC[1m\ESC[32mλ> \ESC[m"

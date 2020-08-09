@@ -6,15 +6,31 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+
 ;;;; Functions and macros
 
+(defmacro substitute-var (var expr &rest body)
+  "Substitute EXPR for VAR in BODY."
+  (declare (indent 2))
+  `(funcall (lambda (,var) ,@body) ,expr))
+
+(defmacro dorange (plist &rest body)
+    "Execute BODY with VAR ranging from START to END.
+\(fn (VAR START END) BODY...)"
+  (declare (indent 1))
+  (cl-destructuring-bind (var start end) plist
+    `(dotimes (,var (- ,end ,start))
+       (substitute-var ,var (+ ,var ,start)
+         ,@body))))
+
 (defun group-by (f xs)
-  "Use a projection to group the elements of a list into an alist."
+  "Group the elements of XS into an alist using the projection F."
   (let ((table (ht-create)))
     (dolist (x xs)
       (let* ((y (funcall f x))
-	     (yxlist (ht-get table y)))
-	(ht-set! table y (cons x yxlist))))
+             (yxlist (ht-get table y)))
+        (ht-set! table y (cons x yxlist))))
     (ht->alist table)))
 
 (defun kill-other-buffers ()
@@ -23,7 +39,20 @@
   (let ((current (current-buffer)))
     (dolist (buffer (buffer-list))
       (unless (eq buffer current)
-	(kill-buffer buffer)))))
+        (kill-buffer buffer)))))
+
+(defun repeats-from-to (str start end)
+  "A list consisting of STR repeated n times, where n ranges from START to END - 1."
+  (let ((acc (repeat-string start str))
+        (ret))
+    (dorange (n start end)
+      (setq ret (cons acc ret))
+    (setq acc (concat acc str)))
+    (reverse ret)))
+
+(defun repeat-string (n str)
+  "Make a new string consisting of STR repeated N times."
+  (apply 'concat (make-list n str)))
 
 ;;;; straight.el
 
@@ -59,6 +88,7 @@
 
 (use-package company
   :init
+  (setq company-idle-delay 0)
   (global-set-key (kbd "<C-tab>") 'company-complete)
   (add-hook 'after-init-hook 'global-company-mode))
 
@@ -67,19 +97,16 @@
 (use-package dante
   :after haskell-mode
   :commands 'dante-mode
-  :init
-  (add-hook 'haskell-mode-hook 'flycheck-mode)
-  (add-hook 'haskell-mode-hook 'dante-mode)
   :config
   (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))
   ;; Just use v2-repl for everything.
   (setq dante-methods-alist
-  	`((v2-build
-  	   ,(lambda (directory)
-  	      (cl-some (apply-partially 'string-suffix-p ".cabal")
-  		       (directory-files directory)))
-  	   ("cabal" "v2-repl")))
-  	dante-methods '(v2-build)))
+        `((v2-build
+           ,(lambda (directory)
+              (cl-some (apply-partially 'string-suffix-p ".cabal")
+                       (directory-files directory)))
+           ("cabal" "v2-repl")))
+        dante-methods '(v2-build)))
 
 (use-package dhall-mode)
 
@@ -92,20 +119,22 @@
   (advice-add 'python-mode :before 'elpy-enable)
   :config
   (when (load "flycheck" t t)
-    (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))
-    (add-hook 'elpy-mode-hook 'flycheck-mode)))
+    (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))))
 
 (use-package exec-path-from-shell
   :init
   (exec-path-from-shell-initialize))
 
-(use-package flycheck)
+(use-package flycheck
+  :init
+  (add-hook 'prog-mode-hook 'flycheck-mode))
 
 (use-package haskell-mode
   :init
   (add-hook 'haskell-mode-hook 'haskell-indentation-mode))
 
-(use-package hasklig-mode)
+(use-package hasklig-mode
+  :hook haskell-mode)
 
 (use-package ht)
 
@@ -115,21 +144,28 @@
   :init
   (ivy-mode t))
 
+(use-package lsp-haskell
+  :config
+  (add-hook
+   'haskell-mode-hook
+   (lambda ()
+     (lsp)
+     (lsp-lens-mode)))
+  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper"))
+
+(use-package lsp-mode)
+
+(use-package lsp-ui)
+
 (use-package lua-mode)
+
+(use-package macrostep)
 
 (use-package magit)
 
 (use-package monokai-theme)
 
 (use-package opencl-mode)
-
-(use-package org
-  :commands org-mode
-  :init
-  (add-hook
-   'org-mode-hook
-   (lambda ()
-     (visual-line-mode t))))
 
 (use-package pkgbuild-mode)
 
@@ -147,6 +183,8 @@
     :hostmode 'poly-sh-hostmode
     :innermodes '(poly-sh-awk-innermode))
   (add-hook 'sh-mode-hook 'poly-sh-mode))
+
+(use-package proof-general)
 
 (use-package purescript-mode
   :init
@@ -168,6 +206,9 @@
 
 (use-package rust-mode)
 
+(use-package spacemacs-theme
+  :defer t)
+
 (use-package sunrise-commander)
 
 (use-package tex
@@ -179,9 +220,13 @@
      (visual-line-mode t)))
   :config
   (setq TeX-parse-self t
-	TeX-auto-save t))
+        TeX-auto-save t))
 
 (use-package treemacs)
+
+(use-package vterm)
+
+(use-package writeroom-mode)
 
 (use-package yaml-mode)
 
@@ -191,17 +236,26 @@
 (setq auto-save-default nil)
 (setq create-lockfiles nil)
 
+;;;; Org
+
+(require 'org)
+(define-key global-map "\C-cl" 'org-store-link)
+(define-key global-map "\C-ca" 'org-agenda)
+(add-hook 'org-mode-hook (lambda () (visual-line-mode t)))
+
 ;;;; UI
 
-(load-theme 'monokai)
+;; (load-theme 'monokai)
+(load-theme 'spacemacs-dark t)
 
-(let ((fonts '("Fira Code")))
-  (cl-dolist (font fonts)
-    (when (x-list-fonts font)
-      (set-face-attribute 'default nil
-			  :family font
-			  :height 150)
-      (cl-return))))
+(when window-system
+  (let ((fonts '("Source Code Pro" "Fira Code")))
+    (cl-dolist (font fonts)
+      (when (x-list-fonts font)
+	(set-face-attribute 'default nil
+                            :family font
+                            :height 150)
+	(cl-return)))))
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
@@ -224,128 +278,41 @@
 ;; The function is `save-buffers-kill-emacs`.
 (global-unset-key (kbd "C-x C-c"))
 
-;; TODO: FiraCode's ligature system is more powerful than this method can fully
-;; accomodate.
-(when (and (>= emacs-major-version 27)
-	   (equal (face-attribute 'default :family) "Fira Code"))
-  (let* ((ligas
-	  '("www"
-	    "--"
-	    "---"
-	    "-~"
-	    "{|"
-	    "|}"
-	    "]#"
-	    ".-"
-	    ".."
-	    "..."
-	    "..="
-	    "..<"
-	    ".?"
-	    ".="
-	    "::"
-	    ":::"
-	    "::="
-	    ":="
-	    ";;"
-	    "!!"
-	    "!!."
-	    "!="
-	    "!=="
-	    "?."
-	    "??"
-	    "?="
-	    "**"
-	    "***"
-	    "*>"
-	    "*/"
-	    "#("
-	    "#{"
-	    "#["
-	    "#:"
-	    "#!"
-	    "#?"
-	    "#="
-	    "#_"
-	    "#_("
-	    "/*"
-	    "/>"
-	    "//"
-	    "///"
-	    "/\\"
-	    "\\/"
-	    "&&"
-	    "|}"
-	    "|]"
-	    "||"
-	    "|||"
-	    "|||>"
-	    "||>"
-	    "|>"
-	    "$>"
-	    "++"
-	    "+++"
-	    "+>"
-	    "=="
-	    "==="
-	    ">="
-	    ">>"
-	    ">>>"
-	    "<!--"
-	    "<*"
-	    "<*>"
-	    "<|"
-	    "<||"
-	    "<|||"
-	    "<|>"
-	    "<$"
-	    "<$>"
-	    "<+"
-	    "<+>"
-	    "<="
-	    "<>"
-	    "<<"
-	    "<<<"
-	    "<~"
-	    "<~>"
-	    "<~~"
-	    "</"
-	    "</>"
-	    "~-"
-	    "~@"
-	    "~>"
-	    "~~"
-	    "~~>"
-	    "^="
-	    "%%"))
-	 (seqs
-	  '(">>="
-	    "=>"
-	    ">=>"
-	    "->"
-	    ">->"
-	    "=<<"
-	    "<=<"
-	    "<-"
-	    "<-<"))
-	 (my-ligatures
-	  '(";;;"
-	    ";;;;"
-	    "&&&"
-	    "Fl"
-	    "Tl"
-	    "fi"
-	    "fj"))
-	 (all-ligatures (append ligas seqs my-ligatures))
-	 (ligature-alist (group-by (lambda (str)
-				     (aref str 0))
-				   all-ligatures))
-	 (regexp-alist (mapcar (lambda (pair)
-				 (cons (car pair) (regexp-opt (cdr pair))))
-			       ligature-alist)))
-    (dolist (char-regexp regexp-alist)
-      (set-char-table-range composition-function-table (car char-regexp)
-                            `([,(cdr char-regexp) 0 compose-gstring-for-graphic])))))
+(let ((enable-firacode-ligatures nil))
+  ;; TODO: FiraCode's ligature system is more powerful than this method can fully
+  ;; accomodate.
+  (when (and enable-firacode-ligatures
+             (>= emacs-major-version 27)
+             (equal (face-attribute 'default :family) "Fira Code"))
+    (let* ((liga
+            '("www" "--" "---" "-~" "{|" "|}" "]#" ".-" ".." "..." "..=" "..<"
+              ".?" ".=" "::" ":::" "::=" ":=" ";;" "!!" "!!." "!=" "!==" "?." "??"
+              "?=" "**" "***" "*>" "*/" "#(" "#{" "#[" "#:" "#!" "#?" "#=" "#_"
+              "#_(" "/*" "/>" "//" "///" "/\\" "\\/" "&&" "|}" "|]" "||" "|||"
+              "|||>" "||>" "|>" "$>" "++" "+++" "+>" "==" "===" ">=" ">>" ">>>"
+              "<!--" "<*" "<*>" "<|" "<||" "<|||" "<|>" "<$" "<$>" "<+" "<+>" "<="
+              "<>" "<<" "<<<" "<~" "<~>" "<~~" "</" "</>" "~-" "~@" "~>" "~~"
+              "~~>" "^=" "%%"))
+           (seq
+            '(">>=" "=>" ">=>" "->" ">->" "=<<" "<=<" "<-" "<-<"))
+           (salt
+            '("Fl" "Il" "Tl" "fi" "fj"))
+           (dash
+            (repeats-from-to "-" 4 80))
+           (misc
+            '(";;;" ";;;;" "&&&" "^^=" "<-="))
+           (all-ligatures
+            (append liga seq salt dash misc))
+           (ligature-alist
+            (group-by (lambda (str) (aref str 0)) all-ligatures))
+           (regexp-alist
+            (mapcar (lambda (pair) (cons (car pair) (regexp-opt (cdr pair))))
+                    ligature-alist)))
+      (dolist (char-regexp regexp-alist)
+        (set-char-table-range
+         composition-function-table
+         (car char-regexp)
+         `([,(cdr char-regexp) 0 compose-gstring-for-graphic]))))))
 
 ;;;; Buffers
 
@@ -355,13 +322,19 @@
 
 (ignore-errors
   (load-file (let ((coding-system-for-read 'utf-8))
-	       (shell-command-to-string "agda-mode locate"))))
+               (shell-command-to-string "agda-mode locate"))))
 
 (setq c-default-style
       '((java-mode . "java")
-	(awk-mode . "awk")
-	(other . "k&r"))
+        (awk-mode . "awk")
+        (other . "k&r"))
       c-basic-offset 4)
+
+(setq erc-nick "nosewings")
+
+(setq-default indent-tabs-mode nil)
+
+(setq-default fill-column 80)
 
 ;;;; Server
 
