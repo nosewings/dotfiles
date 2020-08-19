@@ -11,7 +11,7 @@ typeset -U path
 
 function add_to_path_if_exists() {
     if [[ -d "$1" ]]; then
-        path+=("$1")
+        path=($1 $path)
     fi
 }
 
@@ -52,13 +52,15 @@ function {
     add_to_path_if_exists "$HOME/.cabal/bin"
 
     # Just add whatever version of nsight-compute we have installed.
-    local nsight_dir=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
-    if [[ ! -z "$nsight_dir" ]]; then
-        path+=("$nsight_dir")
+    if [[ -d /opt/cuda ]]; then
+        local nsight_dir=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
+        if [[ ! -z "$nsight_dir" ]]; then
+            path=("$nsight_dir" $path)
+        fi
     fi
 
     # Check various locations for an Anaconda installation.
-    local conda_dirs=("$HOME/.local/opt/conda" "$HOME/.local/opt/miniconda3" "/opt/anaconda")
+    conda_dirs=("$HOME/.local/opt/conda" "$HOME/.local/opt/miniconda3" "/opt/anaconda")
     for conda_dir in $conda_dirs; do
         if [[ -d "$conda_dir" ]]; then
             local CONDA_DIR="$conda_dir"
@@ -68,7 +70,7 @@ function {
     # Can't make for-loop variables local.
     unset conda_dir
     # Standard Anaconda initialization stuff.
-    if [[ -v CONDA_DIR ]]; then
+    if [ -n "${CONDA_DIR+1}" ]; then
         local CONDA="$CONDA_DIR/bin/conda"
         local conda_setup="$($CONDA 'shell.bash' 'hook' 2> /dev/null)"
         if [[ $? -eq 0 ]]; then
@@ -77,23 +79,25 @@ function {
             if [[ -f "$CONDA_DIR/etc/profile.d/conda.sh" ]]; then
                 . "$CONDA_DIR/etc/profile.d/conda.sh"
             else
-                path+=("$CONDA_DIR/bin")
+                path=("$CONDA_DIR/bin" $path)
             fi
         fi
     fi
 
     # Just add whatever version of MATLAB we have installed.
-    local matlab_dir=$(echo $HOME/.local/opt/MATLAB/*) 2>/dev/null
-    if [[ ! -z "$matlab_dir" ]]; then
-        path+=("$matlab_dir/bin")
+    if [[ -d /.local/opt/MATLAB ]]; then
+        local matlab_dir=$(echo $HOME/.local/opt/MATLAB/*) 2>/dev/null
+        if [[ ! -z "$matlab_dir" ]]; then
+            path=("$matlab_dir/bin" $path)
+        fi
     fi
 
     export npm_config_prefix="$HOME/.node_modules"
-    path+=("$npm_config_prefix/bin")
+    path=("$npm_config_prefix/bin" $path)
 
-    path+=("$HOME/.cargo/bin")
+    path=("$HOME/.cargo/bin" $path)
 
-    path+=("$HOME/doom-emacs/bin")
+    path=("$HOME/doom-emacs/bin" $path)
 }
 
 # Can't make functions local.
