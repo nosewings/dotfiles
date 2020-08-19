@@ -72,9 +72,10 @@
       (dotimes (_ (- end-col begin-col))
         (insert chr)))))
 
-;;;; straight.el
+;;;; straight.el and use-package
 
 (setq use-package-always-defer t)
+(setq use-package-always-ensure t)
 (if (version<= "24.5" emacs-version)
     ;; Use straight.el.
     (progn
@@ -94,10 +95,11 @@
       (straight-use-package 'use-package))
   ;; Fallback.
   (progn
-    (package-initialize)
     (require 'package)
-    (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+    (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
+    (package-initialize)
     (unless (package-installed-p 'use-package)
+      (package-refresh-contents)
       (package-install 'use-package))
     (require 'use-package)))
 
@@ -113,7 +115,7 @@
 ;;;; UI packages
 
 (use-package doom-modeline
-  :init
+  :config
   (doom-modeline-mode t))
 
 (use-package doom-themes)
