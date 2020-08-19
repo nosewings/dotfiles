@@ -92,7 +92,8 @@
             (goto-char (point-max))
             (eval-print-last-sexp)))
         (load bootstrap-file nil 'nomessage))
-      (straight-use-package 'use-package))
+      (straight-use-package 'use-package)
+      (setq straight t))
   ;; Fallback.
   (progn
     (require 'package)
@@ -101,7 +102,8 @@
     (unless (package-installed-p 'use-package)
       (package-refresh-contents)
       (package-install 'use-package))
-    (require 'use-package)))
+    (require 'use-package)
+    (setq straight nil)))
 
 ;;;; custom
 
@@ -117,18 +119,19 @@
 (use-package doom-modeline
   :config
   (doom-modeline-mode t))
-
 (use-package doom-themes)
 
 (use-package monokai-theme)
 
-(use-package spacemacs-theme)
+(when straight
+  (use-package spacemacs-theme))
 
 ;;;; UI
 
 ;; (load-theme 'doom-laserwave t)
-(load-theme 'doom-outrun-electric t)
-;; (load-theme 'monokai t)
+(if (package-installed-p 'doom-themes)
+    (load-theme 'doom-outrun-electric t)
+  (load-theme 'monokai t))
 ;; (load-theme 'spacemacs-dark t)
 
 (when window-system
@@ -148,7 +151,8 @@
 (tool-bar-mode 0)
 
 (setq column-number-mode t)
-(global-display-line-numbers-mode)
+(when (version<= "26" emacs-version)
+  (global-display-line-numbers-mode))
 
 (setq show-paren-delay 0)
 (show-paren-mode 1)
