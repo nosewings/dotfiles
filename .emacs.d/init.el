@@ -74,21 +74,32 @@
 
 ;;;; straight.el
 
-(setq straight-use-package-by-default t)
-(defvar bootstrap-version)
-(let ((bootstrap-file
-       (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-      (bootstrap-version 5))
-  (unless (file-exists-p bootstrap-file)
-    (with-current-buffer
-        (url-retrieve-synchronously
-         "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
-         'silent 'inhibit-cookies)
-      (goto-char (point-max))
-      (eval-print-last-sexp)))
-  (load bootstrap-file nil 'nomessage))
-(straight-use-package 'use-package)
 (setq use-package-always-defer t)
+(if (version<= "24.5" emacs-version)
+    ;; Use straight.el.
+    (progn
+      (setq straight-use-package-by-default t)
+      (defvar bootstrap-version)
+      (let ((bootstrap-file
+             (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+            (bootstrap-version 5))
+        (unless (file-exists-p bootstrap-file)
+          (with-current-buffer
+              (url-retrieve-synchronously
+               "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+               'silent 'inhibit-cookies)
+            (goto-char (point-max))
+            (eval-print-last-sexp)))
+        (load bootstrap-file nil 'nomessage))
+      (straight-use-package 'use-package))
+  ;; Fallback.
+  (progn
+    (package-initialize)
+    (require 'package)
+    (add-to-list 'package-archives '("melpa" . "http://melpa.milkbox.net/packages/") t)
+    (unless (package-installed-p 'use-package)
+      (package-install 'use-package))
+    (require 'use-package)))
 
 ;;;; custom
 
@@ -117,7 +128,6 @@
 (load-theme 'doom-outrun-electric t)
 ;; (load-theme 'monokai t)
 ;; (load-theme 'spacemacs-dark t)
-
 
 (when window-system
   (let ((fonts '("Source Code Pro" "Fira Code")))
