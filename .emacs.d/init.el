@@ -16,13 +16,19 @@
   `(funcall (lambda (,var) ,@body) ,expr))
 
 (defmacro dorange (plist &rest body)
-    "Execute BODY with VAR ranging from START to END.
+  "Execute BODY with VAR ranging from START to END.
 \(fn (VAR START END) BODY...)"
   (declare (indent 1))
   (cl-destructuring-bind (var start end) plist
     `(dotimes (,var (- ,end ,start))
        (substitute-var ,var (+ ,var ,start)
          ,@body))))
+
+(defun column-number-of (pos)
+  "Get the column number of POS."
+  (save-excursion
+    (goto-char pos)
+    (current-column)))
 
 (defun group-by (f xs)
   "Group the elements of XS into an alist using the projection F."
@@ -54,6 +60,18 @@
   "Make a new string consisting of STR repeated N times."
   (apply 'concat (make-list n str)))
 
+(defun underline-region (begin end chr)
+  "Underline region (from BEGIN to END) with CHR."
+  (interactive "r\ncUnderline character:")
+  (let ((begin-col (column-number-of begin))
+        (end-col (column-number-of end)))
+    (save-excursion
+      (move-end-of-line nil)
+      (newline)
+      (move-to-column begin-col t)
+      (dotimes (_ (- end-col begin-col))
+        (insert chr)))))
+
 ;;;; straight.el
 
 (setq straight-use-package-by-default t)
@@ -70,183 +88,36 @@
       (eval-print-last-sexp)))
   (load bootstrap-file nil 'nomessage))
 (straight-use-package 'use-package)
+(setq use-package-always-defer t)
 
 ;;;; custom
 
 (setq custom-file "~/.emacs.d/custom.el")
 (load custom-file 'noerror)
 
-;;;; Packages
+;;;; Utility packages
 
-(use-package attrap)
+(use-package ht)
 
-(use-package cargo)
-
-(use-package counsel
-  :init
-  (counsel-mode))
-
-(use-package company
-  :init
-  (setq company-idle-delay 0)
-  (global-set-key (kbd "<C-tab>") 'company-complete)
-  (add-hook 'after-init-hook 'global-company-mode))
-
-(use-package cuda-mode)
-
-(use-package dante
-  :after haskell-mode
-  :commands 'dante-mode
-  :config
-  (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))
-  ;; Just use v2-repl for everything.
-  (setq dante-methods-alist
-        `((v2-build
-           ,(lambda (directory)
-              (cl-some (apply-partially 'string-suffix-p ".cabal")
-                       (directory-files directory)))
-           ("cabal" "v2-repl")))
-        dante-methods '(v2-build)))
-
-(use-package dhall-mode)
+;;;; UI packages
 
 (use-package doom-modeline
   :init
   (doom-modeline-mode t))
 
-(use-package elpy
-  :init
-  (advice-add 'python-mode :before 'elpy-enable)
-  :config
-  (when (load "flycheck" t t)
-    (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))))
-
-(use-package exec-path-from-shell
-  :init
-  (exec-path-from-shell-initialize))
-
-(use-package flycheck
-  :init
-  (add-hook 'prog-mode-hook 'flycheck-mode))
-
-(use-package haskell-mode
-  :init
-  (add-hook 'haskell-mode-hook 'haskell-indentation-mode))
-
-(use-package hasklig-mode
-  :hook haskell-mode)
-
-(use-package ht)
-
-(use-package idris-mode)
-
-(use-package ivy
-  :init
-  (ivy-mode t))
-
-(use-package lsp-haskell
-  :config
-  (add-hook
-   'haskell-mode-hook
-   (lambda ()
-     (lsp)
-     (lsp-lens-mode)))
-  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper"))
-
-(use-package lsp-mode)
-
-(use-package lsp-ui)
-
-(use-package lua-mode)
-
-(use-package macrostep)
-
-(use-package magit)
+(use-package doom-themes)
 
 (use-package monokai-theme)
 
-(use-package opencl-mode)
-
-(use-package pkgbuild-mode)
-
-(use-package polymode
-  :init
-  (define-hostmode poly-sh-hostmode
-    :mode 'sh-mode)
-  (define-innermode poly-sh-awk-innermode
-    :mode 'awk-mode
-    :head-matcher "^[^#\n]*?awk[^#\n]*?'"
-    :tail-matcher "'"
-    :head-mode 'host
-    :tail-mode 'host)
-  (define-polymode poly-sh-mode
-    :hostmode 'poly-sh-hostmode
-    :innermodes '(poly-sh-awk-innermode))
-  (add-hook 'sh-mode-hook 'poly-sh-mode))
-
-(use-package proof-general)
-
-(use-package purescript-mode
-  :init
-  (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation))
-
-(use-package racer
-  :init
-  (add-hook
-   'rust-mode-hook
-   (lambda ()
-     (racer-mode)
-     (eldoc-mode)
-     (company-mode)))
-  (setq rust-format-on-save t))
-
-(use-package racket-mode
-  :init
-  (add-hook 'racket-mode-hook 'racket-unicode-input-method-enable))
-
-(use-package rust-mode)
-
-(use-package spacemacs-theme
-  :defer t)
-
-(use-package sunrise-commander)
-
-(use-package tex
-  :straight auctex
-  :init
-  (add-hook
-   'TeX-mode-hook
-   (lambda ()
-     (visual-line-mode t)))
-  :config
-  (setq TeX-parse-self t
-        TeX-auto-save t))
-
-(use-package treemacs)
-
-(use-package vterm)
-
-(use-package writeroom-mode)
-
-(use-package yaml-mode)
-
-;;;; Backups
-
-(setq make-backup-files nil)
-(setq auto-save-default nil)
-(setq create-lockfiles nil)
-
-;;;; Org
-
-(require 'org)
-(define-key global-map "\C-cl" 'org-store-link)
-(define-key global-map "\C-ca" 'org-agenda)
-(add-hook 'org-mode-hook (lambda () (visual-line-mode t)))
+(use-package spacemacs-theme)
 
 ;;;; UI
 
-;; (load-theme 'monokai)
-(load-theme 'spacemacs-dark t)
+;; (load-theme 'doom-laserwave t)
+(load-theme 'doom-outrun-electric t)
+;; (load-theme 'monokai t)
+;; (load-theme 'spacemacs-dark t)
+
 
 (when window-system
   (let ((fonts '("Source Code Pro" "Fira Code")))
@@ -254,7 +125,7 @@
       (when (x-list-fonts font)
 	(set-face-attribute 'default nil
                             :family font
-                            :height 150)
+                            :height 140)
 	(cl-return)))))
 
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
@@ -277,6 +148,10 @@
 ;; Too often have I accidentally pressed this key combination.
 ;; The function is `save-buffers-kill-emacs`.
 (global-unset-key (kbd "C-x C-c"))
+
+;; Similarly...
+(when window-system
+  (global-unset-key (kbd "C-z")))
 
 (let ((enable-firacode-ligatures nil))
   ;; TODO: FiraCode's ligature system is more powerful than this method can fully
@@ -313,6 +188,187 @@
          composition-function-table
          (car char-regexp)
          `([,(cdr char-regexp) 0 compose-gstring-for-graphic]))))))
+
+;;;; Packages
+
+(use-package attrap)
+
+(use-package cargo)
+
+(use-package counsel
+  :init
+  (counsel-mode))
+
+(use-package company
+  :init
+  (setq company-idle-delay 0)
+  (global-set-key (kbd "<C-tab>") 'company-complete)
+  (add-hook 'after-init-hook 'global-company-mode))
+
+(use-package cuda-mode)
+
+(use-package cython-mode)
+
+(use-package dante
+  :after haskell-mode
+  :commands 'dante-mode
+  :config
+  (flycheck-add-next-checker 'haskell-dante '(info . haskell-hlint))
+  ;; Just use v2-repl for everything.
+  (setq dante-methods-alist
+        `((v2-build
+           ,(lambda (directory)
+              (cl-some (apply-partially 'string-suffix-p ".cabal")
+                       (directory-files directory)))
+           ("cabal" "v2-repl")))
+        dante-methods '(v2-build)))
+
+(use-package dhall-mode)
+
+(use-package elpy
+  :demand
+  :init
+  (advice-add 'python-mode :before 'elpy-enable)
+  :config
+  (when (load "flycheck" t t)
+    (setq elpy-modules (delq 'elpy-module-flymake elpy-modules))))
+
+(use-package exec-path-from-shell
+  :init
+  (exec-path-from-shell-initialize))
+
+(use-package flycheck
+  :init
+  (add-hook 'prog-mode-hook 'flycheck-mode))
+
+(use-package haskell-mode
+  :init
+  (add-hook 'haskell-mode-hook 'haskell-indentation-mode))
+
+(use-package hasklig-mode
+  :hook haskell-mode)
+
+(use-package hideshow)
+
+(use-package highlight-numbers
+  :hook (prog-mode . highlight-numbers-mode))
+
+(use-package idris-mode)
+
+(use-package ivy
+  :init
+  (ivy-mode t))
+
+(use-package lsp-haskell
+  :config
+  (add-hook
+   'haskell-mode-hook
+   (lambda ()
+     (lsp)
+     (lsp-lens-mode)))
+  (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper"))
+
+(use-package lsp-mode)
+
+(use-package lsp-ui
+  :config
+  (setq lsp-ui-sideline-show-diagnostics t))
+
+(use-package lua-mode)
+
+(use-package macrostep)
+
+(use-package magit)
+
+(use-package opencl-mode)
+
+(use-package pkgbuild-mode)
+
+(use-package polymode
+  :init
+  (define-hostmode poly-sh-hostmode
+    :mode 'sh-mode)
+  (define-innermode poly-sh-awk-innermode
+    :mode 'awk-mode
+    :head-matcher "^[^#\n]*?awk[^#\n]*?'"
+    :tail-matcher "'"
+    :head-mode 'host
+    :tail-mode 'host)
+  (define-polymode poly-sh-mode
+    :hostmode 'poly-sh-hostmode
+    :innermodes '(poly-sh-awk-innermode))
+  (add-hook 'sh-mode-hook 'poly-sh-mode))
+
+(use-package proof-general)
+
+(use-package projectile
+  :init
+  (projectile-mode +1)
+  (define-key projectile-mode-map (kbd "s-p") 'projectile-command-map)
+  (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map))
+
+(use-package purescript-mode
+  :init
+  (add-hook 'purescript-mode-hook 'turn-on-purescript-indentation))
+
+(use-package python-mode
+  :init
+  (add-hook
+   'python-mode-hook
+   (lambda ()
+     (setq fill-column 72)))
+  :config
+  (setq python-fill-docstring-style 'django))
+
+(use-package racer
+  :init
+  (add-hook
+   'rust-mode-hook
+   (lambda ()
+     (racer-mode)
+     (eldoc-mode)
+     (company-mode)))
+  (setq rust-format-on-save t))
+
+(use-package racket-mode
+  :init
+  (add-hook 'racket-mode-hook 'racket-unicode-input-method-enable))
+
+(use-package rust-mode)
+
+(use-package sunrise-commander)
+
+(use-package tex
+  :straight auctex
+  :init
+  (add-hook
+   'TeX-mode-hook
+   (lambda ()
+     (visual-line-mode t)))
+  :config
+  (setq TeX-parse-self t
+        TeX-auto-save t))
+
+(use-package treemacs)
+
+(use-package vterm)
+
+(use-package writeroom-mode)
+
+(use-package yaml-mode)
+
+;;;; Backups
+
+(setq make-backup-files nil)
+(setq auto-save-default nil)
+(setq create-lockfiles nil)
+
+;;;; Org
+
+(require 'org)
+(define-key global-map "\C-cl" 'org-store-link)
+(define-key global-map "\C-ca" 'org-agenda)
+(add-hook 'org-mode-hook (lambda () (visual-line-mode t)))
 
 ;;;; Buffers
 
