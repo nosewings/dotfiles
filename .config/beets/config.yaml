@@ -1,8 +1,11 @@
 import:
   timid: yes
 
-plugins: fetchart
+plugins: fetchart playlist
 
 fetchart:
   auto: yes
   sources: filesystem
+
+playlist:
+  relative_to: ~/Music

@@ -1,0 +1,437 @@
+# -*- eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t) -*-
+#+PROPERTY: header-args :tangle yes
+
+* early-init.el
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  ;;; -*- lexical-binding: t -*-
+#+END_SRC
+
+First, we want to minimize garbage collection during init. Setting
+~gc-cons-threshold~ to the biggest number we can get our hands on does the job.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (setq gc-cons-threshold most-positive-fixnum)
+#+END_SRC
+
+Next, we want to stop Emacs from doing any package management.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (setq package-enable-at-startup nil)
+#+END_SRC
+
+Now we're ready to bootstrap ~straight.el~.
+
+For some reason, ~straight.el~ bootstraps /way/ faster in
+~early-init.el~. That's actually not the main reason we bootstrap in
+~early-init.el~ --- the main reason is that we want to be able to load UI
+packages in here --- but it's an odd fact.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (setq straight-use-package-by-default t)
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+  (straight-use-package 'use-package)
+  (setq use-package-always-defer t)
+#+END_SRC
+
+Now we can get to work. First, we're going to disable some crufty UI
+elements. Why do we do it this way? See
+https://github.com/raxod502/radian/issues/180.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (push '(menu-bar-lines . 0) default-frame-alist)
+  (push '(tool-bar-lines . 0) default-frame-alist)
+#+END_SRC
+
+~solaire-global-mode~ needs to be enabled before we set a theme.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+(use-package solaire-mode
+  :demand
+  :init
+  (solaire-global-mode))
+#+END_SRC
+
+The following stuff should definitely be the default.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (column-number-mode)
+  (global-display-line-numbers-mode)
+#+END_SRC
+
+Enable a custom modeline.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (use-package doom-modeline
+    :demand
+    :init
+    (doom-modeline-mode t))
+#+END_SRC
+
+Set up a font and theme.
+
+#+BEGIN_SRC emacs-lisp :tangle early-init.el
+  (set-face-attribute 'default nil :family "Iosevka" :height 150)
+
+  (use-package doom-themes)
+
+  (use-package monokai-theme
+    :demand
+    :init
+    (load-theme 'doom-Iosvkem t))
+
+  (use-package monokai-pro-theme)
+#+END_SRC
+
+* Preliminaries
+
+#+BEGIN_SRC emacs-lisp
+  ;;; -*- lexical-binding: t -*-
+#+END_SRC
+
+We avoid Customize as much as possible, but it's useful for certain things;
+e.g., marking local variables as safe.
+
+#+BEGIN_SRC emacs-lisp
+(setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+(load custom-file)
+#+END_SRC
+
+* Functions
+
+#+BEGIN_SRC emacs-lisp
+  (defun nosewings/kill-other-buffers ()
+    "Kill all buffers except the current one."
+    (interactive)
+    (let ((current (current-buffer)))
+      (dolist (buffer (buffer-list))
+        (unless (eq buffer current)
+          (kill-buffer buffer)))))
+
+  (defvar known-ligature-families
+    '("Cascadia Code"
+      "Fira Code"
+      "Hasklig"
+      "Iosevka"
+      "Jetbrains Mono"
+      "Monoid"
+      "Victor Mono"))
+
+  (defun nosewings/enable-ligatures ()
+    (progn
+      (global-auto-composition-mode)
+      (set-char-table-range
+       composition-function-table
+       '(#x21 . #x7e)
+       '(["[\x21-\x7e]+" 0 font-shape-gstring]))))
+
+  (defun nosewings/set-font (font)
+    (interactive "sSet font: ")
+    (set-face-attribute 'default nil :family font)
+    (if (member font known-ligature-families)
+        (nosewings/enable-ligatures)
+      (global-auto-composition-mode nil)))
+
+  (defun nosewings/set-theme (theme)
+    "Disable all currently active themes and then enable THEME."
+    ;; `interactive` invocation stolen from custom.el.
+    (interactive
+     (list
+      (intern
+       (completing-read
+        "Set theme: "
+        (mapcar #'symbol-name (custom-available-themes))))))
+    (let ((themes custom-enabled-themes))
+      (dolist (thm themes)
+        (disable-theme thm)))
+    (load-theme theme t))
+
+  (defun nosewings/column-number-at-pos (pos)
+    "Get the column number of buffer position POS."
+    (save-excursion
+      (goto-char pos)
+      (current-column)))
+
+  (defun nosewings/underline-region (begin end char)
+    "Underline the region from BEGIN to END with CHAR."
+    (interactive "r\ncUnderline with:")
+    (let ((row1 (line-number-at-pos begin))
+          (col1 (nosewings/column-number-at-pos begin))
+          (row2 (line-number-at-pos end))
+          (col2 (nosewings/column-number-at-pos end)))
+      (unless (eq row1 row2)
+        (error "Can't underline a multi-row region"))
+      (save-excursion
+        (goto-char end)
+        (move-end-of-line nil)
+        (newline)
+        (dotimes (_ col1)
+          (insert-char ?\s))
+        (dotimes (_ (- col2 col1))
+          (insert-char char)))))
+#+END_SRC
+
+* Global Emacs modifications
+** Company
+
+#+BEGIN_SRC emacs-lisp
+  (use-package company
+  :custom
+  (company-idle-delay 0))
+#+END_SRC
+
+** Flycheck
+
+#+BEGIN_SRC emacs-lisp
+  (use-package flycheck
+    :hook
+    (prog-mode . flycheck-mode))
+#+END_SRC
+
+** Ivy
+
+~(ivy-wrap t)~ enables torus behavior.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ivy
+    :demand
+    :init
+    (ivy-mode)
+    :custom
+    (ivy-wrap t)
+    (ivy-ignore-buffers '("*.+*")))
+#+END_SRC
+
+** LSP
+
+#+BEGIN_SRC emacs-lisp
+    (use-package lsp-mode
+      :custom
+      (lsp-pyls-plugins-pylint-enabled t)
+      :hook
+      (haskell-mode . lsp)
+      (python-mode . lsp))
+
+    (use-package lsp-ui)
+#+END_SRC
+
+** Shackle
+
+#+BEGIN_SRC emacs-lisp
+  (use-package shackle)
+#+END_SRC
+
+** Treemacs
+
+The ~:config~ here makes Treemacs automatically ignore Git-ignored files.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package treemacs
+    :config
+    (treemacs-git-mode 'extended)
+    (add-to-list 'treemacs-pre-file-insert-predicates #'treemacs-is-file-git-ignored?))
+#+END_SRC
+
+* Major modes
+** Agda
+
+The idea of loading Agda's input method separately comes from
+https://github.com/TOTBWF/BigMacs, though I'm not sure what their use-case is.
+For us, the point is that the input method is useful for a bunch of stuff other
+than just editing Agda code, so we want to make sure it gets
+loaded. ~agda2-mode~ itself doesn't need to be loaded unless we actually open an
+Agda file.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package agda-input
+    :straight (agda-input
+               :type git
+               :host github
+               :repo "agda/agda"
+               :files ("src/data/emacs-mode/agda-input.el"))
+    :demand)
+
+  (use-package agda2-mode
+    :straight (agda2-mode
+               :type git
+               :host github
+               :repo "agda/agda"
+               :files ("src/data/emacs-mode/*.el" (:exclude "agda-input.el"))))
+#+END_SRC
+
+** Conf
+
+By default, Emacs doesn't recognize ~pylintrc~.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package conf-mode
+    :mode
+    ("pylintrc" . conf-unix-mode))
+#+END_SRC
+
+** Haskell
+
+#+BEGIN_SRC emacs-lisp
+  (use-package haskell-mode)
+
+  (use-package lsp-haskell
+    :config
+    (setq lsp-haskell-process-path-hie "haskell-language-server-wrapper"))
+
+  (when (equal (face-attribute 'default :family) "Hasklig")
+    (use-package hasklig-mode
+      :hook
+      haskell-mode))
+#+END_SRC
+
+** Python
+
+#+BEGIN_SRC emacs-lisp
+  (use-package python
+    :custom
+    (python-fill-docstring-style 'django)
+    :config
+    (add-hook 'python-mode-hook (lambda () (set-fill-column 72))))
+
+  (use-package blacken)
+#+END_SRC
+
+** vterm
+
+#+BEGIN_SRC emacs-lisp
+  (use-package vterm)
+#+END_SRC
+
+** Yaml
+
+#+BEGIN_SRC emacs-lisp
+  (use-package yaml-mode)
+#+END_SRC
+
+* Not Organized yet
+
+#+BEGIN_SRC emacs-lisp
+  (use-package hl-todo
+    :demand
+    :init
+    (global-hl-todo-mode)
+    :custom
+    (hl-todo-keyword-faces '(("TODO" warning bold)
+                             ("WARNING" warning bold)
+                             ("FIXME" error bold)
+                             ("HACK" font-lock-constant-face bold)
+                             ("NOTE" success bold)
+                             ("DEPRECATED" font-lock-doc-face bold)
+                             ("BUG" error bold))))
+
+  (use-package highlight-indent-guides
+    :custom
+    (highlight-indent-guides-method 'bitmap)
+    :hook
+    (prog-mode . highlight-indent-guides-mode))
+
+  (use-package highlight-numbers
+    :hook
+    (prog-mode . highlight-numbers-mode))
+
+  (use-package rainbow-delimiters
+    :hook
+    (prog-mode . rainbow-delimiters-mode))
+
+  (setq auto-save-default nil
+        create-lockfiles nil
+        make-backup-files nil)
+
+  (setq show-paren-delay 0)
+  (show-paren-mode)
+
+  (setq-default fill-column 80)
+
+  (global-auto-revert-mode t)
+
+  (global-hl-line-mode)
+
+  (setq-default indent-tabs-mode nil)
+#+END_SRC
+
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-splash-screen t
+        initial-major-mode #'fundamental-mode
+        initial-scratch-message "\
+                                         @@@(
+                                         %@@*
+                                         .@@@
+                                         .@@
+                                          @@
+                                         @@
+                                          @
+                                        @@@
+                                         @@
+                                         @@
+                                         @@
+                                       ( @@
+                                        @@@@
+                                       @@@@@@/
+                                     @@  @@  @@@
+                                  @@     @@    @@@%
+                                 @       @@       @@@
+                             @@@         #@.        @@@@
+                            @@           @@&          @@@
+                               @         @@@        @@@@
+                                @@@      @@@      @@@
+                                   @@    @@@     @@
+                                       (@ %
+                                       @  @@
+                                        @@@@,
+                                          @%")
+#+END_SRC
+
+I've accidentally typed ~C-x C-c~ an embarrassing number of times, so I need
+something to stop Emacs from immediately quitting when I do that. Might as well
+steal more ideas from Doom.
+
+#+BEGIN_SRC emacs-lisp
+    (defconst nosewings/quit-messages
+      '("Farewell, good hunter. May you find your worth in the waking world."
+        "The night, and the dream, were long."
+        "Goodbye, Caroline."
+        "L'important n'est pas la chute. C'est l'atterrissage!"))
+
+    (defun nosewings/confirm-quit (&rest args)
+      (yes-or-no-p (format "%s | Quit? "
+                           (nth (random (length nosewings/quit-messages))
+                                nosewings/quit-messages))))
+
+    (if (daemonp)
+        (global-set-key (kbd "C-x C-c") (lambda ()
+                                          (interactive)
+                                          (when (nosewings/confirm-quit)
+                                            (delete-frame))))
+      (setq confirm-kill-emacs #'nosewings/confirm-quit))
+#+END_SRC
+
+* Epilogue
+
+Last step. In ~early-init.el~, we set ~gc-cons-threshold~ to a very large value
+in order to "disable" garbage collection during startup. We want to turn it back
+on now. We do this by handing things off to ~gcmh-mode~, which automatically
+runs garbage collection while the system is idle.
+
+#+BEGIN_SRC emacs-lisp
+(use-package gcmh
+  :demand
+  :init
+  (gcmh-mode))
+#+END_SRC
+
