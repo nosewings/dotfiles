@@ -1,0 +1,46 @@
+#!/usr/bin/sh
+
+default_sink=$(pacmd info | awk '
+($1 == "Default") && ($2 == "sink") && ($3 == "name:") {
+    print $4
+}
+')
+
+pactl list sinks | awk -v target_sink=$default_sink '
+BEGIN {
+    target_sink_found = 0
+}
+
+($1 == "Name:") && ($2 == target_sink) {
+    target_sink_found = 1
+}
+
+target_sink_found && ($1 == "Mute:") {
+    muted = ($2 == "yes")
+}
+
+target_sink_found && ($1 == "Volume:") {
+    volume_str = $5
+    volume = substr(volume_str, 1, length(volume_str) - 1)
+    volume = int(volume)
+    exit
+}
+
+END {
+    if (muted) {
+	volume_symbol = "婢"
+    } else if (volume == 0) {
+	volume_symbol = "奄"
+    } else if (volume <= 50) {
+	volume_symbol = "奔"
+    } else {
+	volume_symbol = "墳"
+    }
+
+    while (length(volume_str) < 4) {
+	volume_str = " " volume_str
+    }
+
+    print volume_symbol " " volume_str
+}
+'

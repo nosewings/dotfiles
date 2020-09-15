@@ -1,0 +1,24 @@
+#!/bin/bash
+
+function alert-i3blocks {
+    pkill -RTMIN+1 i3blocks
+}
+
+case "$1" in
+    raise)
+	pulseaudio-ctl up 10
+	alert-i3blocks
+	;;
+    lower)
+	pulseaudio-ctl down 10
+	alert-i3blocks
+	;;
+    mute)
+	pulseaudio-ctl mute
+	alert-i3blocks
+	;;
+    mic-mute)
+	pulseaudio-ctl mute-input
+	alert-i3blocks
+	;;
+esac

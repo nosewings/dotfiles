@@ -1,0 +1,25 @@
+[sink-0]
+command=pactl list sinks | ~/.config/i3/scripts/volume-show 0
+interval=once
+signal=1
+color=#ffffff
+
+[memory]
+command=~/.config/i3/scripts/memory-show
+interval=1
+color=#ffffff
+
+[cpu-temperature]
+command=sensors | awk '$1 == "Tdie:" { print "CPU " substr($2, 2) }'
+interval=1
+color=#ffffff
+
+[gpu-temperature]
+command=nvidia-smi -q -d TEMPERATURE | awk '$1 == "GPU" && $2 == "Current" { print "GPU " $5 "°C" }'
+interval=1
+color=#ffffff
+
+[time]
+command=date
+interval=1
+color=#ffffff

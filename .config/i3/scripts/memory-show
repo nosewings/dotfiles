@@ -1,0 +1,12 @@
+#!/usr/bin/sh
+
+free -b | awk '
+$1 == "Mem:" {
+    ratio = int($3) / int($2)
+    output = int(100 * ratio)
+    while (length(output) < 3) {
+	output = " " output
+    }
+    print "MEM " output "%"
+}
+'
