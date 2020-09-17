@@ -10,12 +10,17 @@ interval=1
 color=#ffffff
 
 [cpu-temperature]
-command=sensors | awk '$1 == "Tdie:" { print "CPU " substr($2, 2) }'
+command=~/.config/i3/scripts/cpu-temperature-show
 interval=1
 color=#ffffff
 
 [gpu-temperature]
 command=nvidia-smi -q -d TEMPERATURE | awk '$1 == "GPU" && $2 == "Current" { print "GPU " $5 "°C" }'
+interval=1
+color=#ffffff
+
+[battery]
+command=~/.config/i3/scripts/battery-show
 interval=1
 color=#ffffff
 

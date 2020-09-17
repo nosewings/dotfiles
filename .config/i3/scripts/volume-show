@@ -1,4 +1,4 @@
-#!/usr/bin/sh
+#!/usr/bin/bash
 
 default_sink=$(pacmd info | awk '
 ($1 == "Default") && ($2 == "sink") && ($3 == "name:") {

@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+
+model_name=$(cat /proc/cpuinfo | /usr/bin/grep -m1 'model name' | cut -d' ' -f3-)
+if [[ "$model_name" == 'AMD Ryzen'* ]]; then
+    name='Tdie:'
+    field=2
+elif [[ "$model_name" == 'Intel(R) Core(TM)'* ]]; then
+    name='Package'
+    field=4
+else
+    exit 1
+fi
+
+sensors | awk "\$1 == \"$name\" { print \"CPU \" substr(\$$field, 2) }"
