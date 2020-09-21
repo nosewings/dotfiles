@@ -42,7 +42,7 @@ bindsym XF86AudioMicMute     exec --no-startup-id "$scripts_dir/volume-control m
 floating_modifier $mod
 
 # start a terminal
-bindsym $mod+Return exec kitty
+bindsym $mod+Return exec konsole
 
 # kill focused window
 bindsym $mod+Shift+q kill

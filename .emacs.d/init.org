@@ -82,7 +82,7 @@ Enable a custom modeline.
 Set up a font and theme.
 
 #+BEGIN_SRC emacs-lisp :tangle early-init.el
-  (set-face-attribute 'default nil :family "Iosevka" :height 150)
+  (set-face-attribute 'default nil :family "Iosevka" :width 'normal :height 160 :weight 'normal)
 
   (use-package doom-themes)
 
@@ -129,12 +129,12 @@ e.g., marking local variables as safe.
       "Victor Mono"))
 
   (defun nosewings/enable-ligatures ()
-    (progn
-      (global-auto-composition-mode)
-      (set-char-table-range
-       composition-function-table
-       '(#x21 . #x7e)
-       '(["[\x21-\x7e]+" 0 font-shape-gstring]))))
+    (interactive)
+    (global-auto-composition-mode)
+    (set-char-table-range
+     composition-function-table
+     '(#x21 . #x7e)
+     '(["[\x21-\x7e]+" 0 font-shape-gstring])))
 
   (defun nosewings/set-font (font)
     (interactive "sSet font: ")
@@ -216,14 +216,12 @@ e.g., marking local variables as safe.
 ** LSP
 
 #+BEGIN_SRC emacs-lisp
-    (use-package lsp-mode
-      :custom
-      (lsp-pyls-plugins-pylint-enabled t)
-      :hook
-      (haskell-mode . lsp)
-      (python-mode . lsp))
+  (use-package lsp-mode
+    :hook
+    (haskell-mode . lsp)
+    (python-mode . lsp))
 
-    (use-package lsp-ui)
+  (use-package lsp-ui)
 #+END_SRC
 
 ** Shackle
@@ -295,6 +293,14 @@ By default, Emacs doesn't recognize ~pylintrc~.
       haskell-mode))
 #+END_SRC
 
+** Org
+
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :custom
+    (org-agenda-files '("~/org")))
+#+END_SRC
+
 ** Python
 
 #+BEGIN_SRC emacs-lisp
@@ -305,6 +311,10 @@ By default, Emacs doesn't recognize ~pylintrc~.
     (add-hook 'python-mode-hook (lambda () (set-fill-column 72))))
 
   (use-package blacken)
+
+  (use-package conda
+    :custom
+    (conda-anaconda-home "/home/ncoltharp/.local/opt/miniconda3"))
 #+END_SRC
 
 ** vterm
@@ -363,6 +373,8 @@ By default, Emacs doesn't recognize ~pylintrc~.
   (global-hl-line-mode)
 
   (setq-default indent-tabs-mode nil)
+
+  (use-package unicode-fonts)
 #+END_SRC
 
 #+BEGIN_SRC emacs-lisp

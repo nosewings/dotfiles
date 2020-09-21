@@ -1,5 +1,7 @@
 #!/usr/bin/bash
 
+set -e
+
 capacity=$(cat /sys/class/power_supply/BAT1/capacity)
 if [[ $capacity -le 20 ]]; then
    icon=""
