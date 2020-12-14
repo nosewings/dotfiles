@@ -6,11 +6,11 @@ function alert-i3blocks {
 
 case "$1" in
     raise)
-        pulseaudio-ctl up 10
+        pulseaudio-ctl up
         alert-i3blocks
         ;;
     lower)
-        pulseaudio-ctl down 10
+        pulseaudio-ctl down
         alert-i3blocks
         ;;
     mute)

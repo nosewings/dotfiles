@@ -12,6 +12,9 @@ if [[ ! -d $ZSH_CACHE_DIR ]]; then
 fi
 
 alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+alias less='less -RFX'
+alias pakcs="rlwrap $HOME/opt/pakcs-3.2.0/bin/pakcs"
+alias rg='rg --color always'
 
 if [[ -f $ZSH/oh-my-zsh.sh ]]; then
     source $ZSH/oh-my-zsh.sh

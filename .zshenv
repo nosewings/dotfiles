@@ -17,8 +17,6 @@ function add_to_path_if_exists() {
 
 # Basically a lexical scoping block. Nice.
 function {
-    add_to_path_if_exists "$HOME/.local/bin"
-
     # You know what, I don't buy the "well it's their CPU so they have every
     # right to intentionally cripple their software on every other CPU" thing.
     # There's no need to handle a company like Intel with kid gloves. Given
@@ -48,28 +46,10 @@ function {
     export ncpus="$(nproc --all)"
     makeflags+=("-j$ncpus")
 
-    add_to_path_if_exists "$HOME/.ghcup/bin"
-    add_to_path_if_exists "$HOME/.cabal/bin"
-
-    # Just add whatever version of nsight-compute we have installed.
-    if [[ -d /opt/cuda ]]; then
-        local nsight_dir=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
-        if [[ ! -z "$nsight_dir" ]]; then
-            path=("$nsight_dir" $path)
-        fi
+    # Conda
+    if [[ -d "$HOME/opt/conda" ]]; then
+        local CONDA_DIR="$HOME/opt/conda"
     fi
-
-    # Check various locations for an Anaconda installation.
-    conda_dirs=("$HOME/.local/opt/conda" "$HOME/.local/opt/miniconda3" "/opt/anaconda")
-    for conda_dir in $conda_dirs; do
-        if [[ -d "$conda_dir" ]]; then
-            local CONDA_DIR="$conda_dir"
-            break
-        fi
-    done
-    # Can't make for-loop variables local.
-    unset conda_dir
-    # Standard Anaconda initialization stuff.
     if [ -n "${CONDA_DIR+1}" ]; then
         local CONDA="$CONDA_DIR/bin/conda"
         local conda_setup="$($CONDA 'shell.bash' 'hook' 2> /dev/null)"
@@ -84,21 +64,49 @@ function {
         fi
     fi
 
-    # Just add whatever version of MATLAB we have installed.
-    if [[ -d /.local/opt/MATLAB ]]; then
-        local matlab_dir=$(echo $HOME/.local/opt/MATLAB/*) 2>/dev/null
+    # Curry
+    add_to_path_if_exists "$HOME/opt/pakcs-3.2.0/bin"
+    add_to_path_if_exists "$HOME/.cpm/bin"
+
+    # Doom Emacs
+    add_to_path_if_exists "$HOME/opt/doom-emacs/bin"
+
+    # Haskell
+    add_to_path_if_exists "$HOME/.ghcup/bin"
+    add_to_path_if_exists "$HOME/.cabal/bin"
+
+    # MATLAB
+    if [[ -d "$HOME/opt/MATLAB" ]]; then
+        local matlab_dir=$(echo $HOME/MATLAB/*) 2>/dev/null
         if [[ ! -z "$matlab_dir" ]]; then
             path=("$matlab_dir/bin" $path)
         fi
     fi
 
-    export npm_config_prefix="$HOME/.node_modules"
-    path=("$npm_config_prefix/bin" $path)
+    # node.js
+    if [[ -d "$HOME/.node_modules" ]]; then
+        export npm_config_prefix="$HOME/.node_modules"
+        path=("$npm_config_prefix/bin" $path)
+    fi
 
-    path=("$HOME/.cargo/bin" $path)
+    # Nsight
+    if [[ -d /opt/cuda ]]; then
+        local nsight_dir=$(echo /opt/cuda/nsight-compute*) 2>/dev/null
+        if [[ ! -z "$nsight_dir" ]]; then
+            path=("$nsight_dir" $path)
+        fi
+    fi
 
-    path=("$HOME/doom-emacs/bin" $path)
+    # Rust
+    add_to_path_if_exists "$HOME/.cargo/bin"
 }
 
 # Can't make functions local.
 unfunction add_to_path_if_exists
+
+# Make Qt apps work on i3.
+export QT_AUTO_SCREEN_SCALE_FACTOR=0
+
+# Enable vsync for OpenGL/Vulkan apps (I'm switching to AMD ASAP; seriously,
+# fuck Nvidia).
+export __GL_SYNC_TO_VBLANK=1

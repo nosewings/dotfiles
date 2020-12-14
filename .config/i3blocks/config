@@ -1,3 +1,8 @@
+[minecraft]
+command=~/.config/i3/scripts/mcstatus-show
+interval=1
+color=#ffffff
+
 [sink-0]
 command=pactl list sinks | ~/.config/i3/scripts/volume-show 0
 interval=once

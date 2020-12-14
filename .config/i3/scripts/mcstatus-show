@@ -1,0 +1,8 @@
+#!/usr/bin/bash
+
+mcstatus localhost query | awk '
+($1 == "players:") {
+    $1 = $2 = ""
+    print "" $0
+}
+'
