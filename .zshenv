@@ -110,3 +110,8 @@ export QT_AUTO_SCREEN_SCALE_FACTOR=0
 # Enable vsync for OpenGL/Vulkan apps (I'm switching to AMD ASAP; seriously,
 # fuck Nvidia).
 export __GL_SYNC_TO_VBLANK=1
+
+# Set DISPLAY properly on WSL.
+if uname -a | grep -q "microsoft"; then
+    export DISPLAY="$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0"
+fi
